@@ -1,0 +1,16 @@
+body {
+  background-color: #1c1c1c;
+  color: white;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+canvas {
+  display: block;
+  margin: 20px auto;
+  background-color: #006400;
+  border: 5px solid #654321;
+  box-shadow: 0 0 20px black;
+}
