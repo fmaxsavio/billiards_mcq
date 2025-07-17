@@ -12,7 +12,6 @@ const table = {
 const BALL_RADIUS = 10;
 const POCKET_RADIUS = 18;
 const balls = [];
-let currentPlayer = 1;
 let gameActive = true;
 
 class Ball {
@@ -47,11 +46,9 @@ class Ball {
     if (Math.abs(this.vx) < 0.01) this.vx = 0;
     if (Math.abs(this.vy) < 0.01) this.vy = 0;
 
-    // Wall collision
     if (this.x < BALL_RADIUS || this.x > table.width - BALL_RADIUS) this.vx *= -1;
     if (this.y < BALL_RADIUS || this.y > table.height - BALL_RADIUS) this.vy *= -1;
 
-    // Pocket detection (corners only)
     for (let px of [0, table.width]) {
       for (let py of [0, table.height]) {
         if (Math.hypot(this.x - px, this.y - py) < POCKET_RADIUS) {
@@ -64,7 +61,7 @@ class Ball {
 }
 
 function createBalls() {
-  balls.push(new Ball(150, 200, "white", true)); // Cue ball
+  balls.push(new Ball(150, 200, "white", true)); // cue ball
   const colors = ["yellow", "blue", "red", "purple", "orange", "green", "maroon"];
   let startX = 600;
   let startY = 200;
@@ -82,6 +79,7 @@ function createBalls() {
 let aiming = false;
 let aimX = 0;
 let aimY = 0;
+let mouseDown = false;
 
 canvas.addEventListener("mousedown", (e) => {
   if (!gameActive) return;
@@ -89,19 +87,47 @@ canvas.addEventListener("mousedown", (e) => {
   aimX = e.clientX - rect.left;
   aimY = e.clientY - rect.top;
   aiming = true;
+  mouseDown = true;
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (!mouseDown) return;
+  const rect = canvas.getBoundingClientRect();
+  aimX = e.clientX - rect.left;
+  aimY = e.clientY - rect.top;
 });
 
 canvas.addEventListener("mouseup", (e) => {
   if (!aiming) return;
-  const cueBall = balls.find((b) => b.isCue);
+  const cueBall = balls.find(b => b.isCue);
   if (cueBall.potted) return;
 
   const dx = cueBall.x - aimX;
   const dy = cueBall.y - aimY;
   cueBall.vx = dx * 0.1;
   cueBall.vy = dy * 0.1;
+
   aiming = false;
+  mouseDown = false;
 });
+
+function drawCueStick() {
+  if (!aiming) return;
+  const cueBall = balls.find(b => b.isCue);
+  if (cueBall.potted) return;
+
+  const dx = aimX - cueBall.x;
+  const dy = aimY - cueBall.y;
+  const angle = Math.atan2(dy, dx);
+  const dist = Math.min(100, Math.hypot(dx, dy));
+
+  ctx.beginPath();
+  ctx.moveTo(cueBall.x - Math.cos(angle) * (dist + 20), cueBall.y - Math.sin(angle) * (dist + 20));
+  ctx.lineTo(cueBall.x, cueBall.y);
+  ctx.strokeStyle = "#deb887";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+}
 
 function checkCollisions() {
   for (let i = 0; i < balls.length; i++) {
@@ -133,14 +159,9 @@ function checkCollisions() {
   }
 }
 
-function allBallsStopped() {
-  return balls.every((b) => Math.abs(b.vx) < 0.1 && Math.abs(b.vy) < 0.1);
-}
-
 function update() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw table background
   ctx.fillStyle = "#006400";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -160,6 +181,7 @@ function update() {
   }
 
   checkCollisions();
+  drawCueStick();
 
   requestAnimationFrame(update);
 }
